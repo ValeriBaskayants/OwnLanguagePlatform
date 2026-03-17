@@ -74,19 +74,19 @@ export default function ExercisePage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    exercisesService.getTopics(filterLevel).then(setTopics).catch(() => {});
+    exercisesService.getTopics(filterLevel).then(setTopics).catch(() => { });
   }, [filterLevel]);
 
   const startSession = async () => {
     setLoading(true);
     setNoExercisesMsg('');
     try {
-      const data = await exercisesService.getAll({
-        level: filterLevel,
-        difficulty: filterDiff || undefined,
-        topic: filterTopic || undefined,
-        limit: 100,
-      });
+const params: Record<string, string | number> = { limit: 100 };
+if (filterLevel) params.level = filterLevel;
+if (filterDiff) params.difficulty = filterDiff;
+if (filterTopic) params.topic = filterTopic;
+
+const data = await exercisesService.getAll(params);
       if (!data || data.length === 0) {
         setNoExercisesMsg(`No exercises for level ${filterLevel}${filterDiff ? ` / ${filterDiff}` : ''}. Import exercises via Admin panel.`);
         setLoading(false);
