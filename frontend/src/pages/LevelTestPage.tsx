@@ -63,7 +63,7 @@ export default function LevelTestPage() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await progressService.getUserProgress();
+        const data = await progressService.get();
         setProgress(data?.progress || null);
         if (data?.progress?.isReadyForTest) setPhase('ready');
         else setPhase('locked');

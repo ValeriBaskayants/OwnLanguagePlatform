@@ -203,8 +203,12 @@ export default function VocabularyPage() {
 
   const fetchWords = async () => {
     setLoading(true);
-    const data = await vocabularyService.getAll({ level: filterLevel || undefined, search: search || undefined });
-    setWords(data); setLoading(false);
+    const params: Record<string, string | number> = {};
+    if (filterLevel) params.level = filterLevel;
+    if (search) params.search = search;
+    const data = await vocabularyService.getAll(params);
+    setWords(data);
+    setLoading(false);
   };
 
   useEffect(() => { fetchWords(); }, [filterLevel, search]);

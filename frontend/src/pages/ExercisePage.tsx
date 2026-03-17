@@ -81,12 +81,11 @@ export default function ExercisePage() {
     setLoading(true);
     setNoExercisesMsg('');
     try {
-const params: Record<string, string | number> = { limit: 100 };
-if (filterLevel) params.level = filterLevel;
-if (filterDiff) params.difficulty = filterDiff;
-if (filterTopic) params.topic = filterTopic;
-
-const data = await exercisesService.getAll(params);
+      const params: Record<string, string | number> = { limit: 100 };
+      if (filterLevel) params.level = filterLevel;
+      if (filterDiff) params.difficulty = filterDiff;
+      if (filterTopic) params.topic = filterTopic;
+      const data = await exercisesService.getAll(params);
       if (!data || data.length === 0) {
         setNoExercisesMsg(`No exercises for level ${filterLevel}${filterDiff ? ` / ${filterDiff}` : ''}. Import exercises via Admin panel.`);
         setLoading(false);

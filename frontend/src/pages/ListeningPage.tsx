@@ -153,7 +153,10 @@ export default function ListeningPage() {
   const [selected, setSelected] = useState<ListeningExercise | null>(null);
 
   useEffect(() => {
-    listeningService.getAll({ level: filterLevel || undefined, type: filterType || undefined }).then(d => { setExercises(d); setLoading(false); });
+    const params: Record<string, string> = {};
+    if (filterLevel) params.level = filterLevel;
+    if (filterType) params.type = filterType;
+    listeningService.getAll(params).then(d => { setExercises(d); setLoading(false); });
   }, [filterLevel, filterType]);
 
   if (selected) return (
@@ -192,23 +195,23 @@ export default function ListeningPage() {
       </div>
       {loading ? <div style={{ textAlign: 'center', paddingTop: '3rem' }}><Spinner size="lg" /></div>
         : exercises.length === 0 ? <EmptyState icon="🎧" title="No listening exercises" description="Add exercises from the Admin panel." />
-        : (
-          <div className="grid-2">
-            {exercises.map(ex => (
-              <Card key={ex._id} onClick={() => setSelected(ex)} style={{ cursor: 'pointer' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  <LevelBadge level={ex.level} />
-                  <DifficultyBadge difficulty={ex.difficulty} />
-                  <span className="badge badge-muted">{ex.type}</span>
-                </div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.4rem' }}>{ex.topic}</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                  {ex.text.substring(0, 80)}…
-                </p>
-              </Card>
-            ))}
-          </div>
-        )}
+          : (
+            <div className="grid-2">
+              {exercises.map(ex => (
+                <Card key={ex._id} onClick={() => setSelected(ex)} style={{ cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <LevelBadge level={ex.level} />
+                    <DifficultyBadge difficulty={ex.difficulty} />
+                    <span className="badge badge-muted">{ex.type}</span>
+                  </div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.4rem' }}>{ex.topic}</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                    {ex.text.substring(0, 80)}…
+                  </p>
+                </Card>
+              ))}
+            </div>
+          )}
     </div>
   );
 }
