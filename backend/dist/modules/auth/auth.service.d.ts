@@ -1,0 +1,136 @@
+import { Model } from 'mongoose';
+import { JwtService } from '@nestjs/jwt';
+import { UserDocument } from './schemas/user.schema';
+import { LevelProgressDocument } from '../progress/schemas/level-progress.schema';
+declare const LEVEL_REQUIREMENTS: {
+    A1: {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+    'A1+': {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+    A2: {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+    'A2+': {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+    B1: {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+    'B1+': {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+    B2: {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+    'B2+': {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+    C1: {
+        grammar: number;
+        vocabulary: number;
+        reading: number;
+        writing: number;
+        listening: number;
+        quiz: number;
+        grammarAcc: number;
+        readingAcc: number;
+        quizAcc: number;
+        writingAvg: number;
+        listeningAcc: number;
+    };
+};
+declare const NEXT_LEVELS: Record<string, string>;
+export declare class AuthService {
+    private userModel;
+    private progressModel;
+    private jwtService;
+    constructor(userModel: Model<UserDocument>, progressModel: Model<LevelProgressDocument>, jwtService: JwtService);
+    register(email: string, password: string): unknown;
+    login(email: string, password: string): unknown;
+    getMe(userId: string): unknown;
+    private sanitizeUser;
+    private createInitialProgress;
+}
+export { LEVEL_REQUIREMENTS, NEXT_LEVELS };
