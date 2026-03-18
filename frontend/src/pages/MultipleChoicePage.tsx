@@ -35,8 +35,11 @@ export default function MultipleChoicePage() {
 
   const startSession = async () => {
     setLoading(true);
-    const data = await multipleChoiceService.getAll({ level: filterLevel, difficulty: filterDiff || undefined, limit: 50 });
-    const shuffled = shuffle(data).slice(0, 10);
+    const params: Record<string, string | number> = { limit: 50 };
+    if (filterLevel) params.level = filterLevel;
+    if (filterDiff) params.difficulty = filterDiff;
+    const data = await multipleChoiceService.getAll(params);
+    const shuffled = shuffle(data as MultipleChoiceQuestion[]).slice(0, 10);
     setQueue(shuffled); setIdx(0); setAnswers([]);
     setSelected(null); setStartTime(Date.now()); setQuestionStart(Date.now());
     setTimer(30); setPhase('quiz'); setLoading(false);
@@ -154,17 +157,14 @@ export default function MultipleChoicePage() {
 
         <div style={{
           fontSize: '1.15rem', fontWeight: 600, marginBottom: '1.75rem',
-          padding: '1.25rem', background: 'var(--surface-elevated)', borderRadius: '12px',
-          lineHeight: 1.6,
+          padding: '1.25rem', background: 'var(--surface-elevated)', borderRadius: '12px', lineHeight: 1.6,
         }}>
           {q.question}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           {q.options.map((opt, i) => {
-            let bg = 'var(--surface)';
-            let border = 'var(--border-color)';
-            let color = 'var(--text-primary)';
+            let bg = 'var(--surface)', border = 'var(--border-color)', color = 'var(--text-primary)';
             if (selected !== null) {
               if (i === q.correctIndex) { bg = 'var(--success-light)'; border = 'var(--success)'; color = 'var(--success)'; }
               else if (i === selected && i !== q.correctIndex) { bg = 'var(--danger-light)'; border = 'var(--danger)'; color = 'var(--danger)'; }
