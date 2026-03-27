@@ -22,16 +22,27 @@ export class ReadingsService {
 
   async bulkCreate(readings: any[]) {
     let inserted = 0, skipped = 0, errors = 0;
+    const errorMessages: string[] = [];
+
     for (const r of readings) {
       try {
-        r.wordCount = r.content?.trim().split(/\s+/).length || 0;
+        if (!r.title || !r.level || !r.topic || !r.content) {
+          errors++;
+          errorMessages.push(`Missing required fields: title="${r.title}", level="${r.level}", topic="${r.topic}", hasContent=${!!r.content}`);
+          continue;
+        }
+        r.wordCount = r.content.trim().split(/\s+/).length || 0;
         r.estimatedMinutes = Math.max(1, Math.ceil(r.wordCount / 200));
         const exists = await this.model.findOne({ title: r.title });
         if (exists) { skipped++; continue; }
         await this.model.create(r);
         inserted++;
-      } catch { errors++; }
+      } catch (err: any) {
+        errors++;
+        errorMessages.push(`"${r.title || 'unknown'}": ${err?.message || 'Unknown error'}`);
+        console.error('Reading import error:', err?.message, r.title);
+      }
     }
-    return { inserted, skipped, errors };
+    return { inserted, skipped, errors, errorMessages };
   }
 }

@@ -5,7 +5,7 @@ import { AdminService } from './admin.service';
 @Controller('api/admin')
 @UseGuards(JwtAuthGuard)
 export class AdminController {
-  constructor(private service: AdminService) {}
+  constructor(private service: AdminService) { }
 
   private checkAdmin(req: any) {
     if (req.user?.role !== 'admin') {
@@ -33,6 +33,8 @@ export class AdminController {
 
   @Post('import/readings')
   importReadings(@Body() body: any, @Request() req: any) {
+    console.log('🔥 HIT importExercises');
+    console.log('BODY:', body);
     this.checkAdmin(req);
     return this.service.importReadings(body);
   }

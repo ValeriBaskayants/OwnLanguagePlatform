@@ -6,42 +6,43 @@ import { User, UserDocument } from '../auth/schemas/user.schema';
 import { DailyActivity, DailyActivityDocument } from '../daily-activity/schemas/daily-activity.schema';
 import { Session, SessionDocument } from '../sessions/schemas/session.schema';
 
+// Real CEFR-aligned requirements to unlock level test
 const LEVEL_THRESHOLDS: Record<string, any> = {
-  A1: { 
-    grammar: 30, vocabulary: 500, reading: 5, writing: 3, listening: 5, quiz: 20, 
-    grammarAcc: 70, readingAcc: 70, quizAcc: 75, writingAvg: 60, listeningAcc: 65 
+  A1: {
+    grammar: 60, vocabulary: 200, reading: 6, writing: 0, listening: 4, quiz: 20,
+    grammarAcc: 65, readingAcc: 65, quizAcc: 68, writingAvg: 0, listeningAcc: 60,
   },
-  'A1+': { 
-    grammar: 50, vocabulary: 800, reading: 8, writing: 6, listening: 10, quiz: 30, 
-    grammarAcc: 72, readingAcc: 72, quizAcc: 77, writingAvg: 65, listeningAcc: 68 
+  'A1+': {
+    grammar: 100, vocabulary: 350, reading: 10, writing: 3, listening: 8, quiz: 35,
+    grammarAcc: 68, readingAcc: 68, quizAcc: 70, writingAvg: 60, listeningAcc: 63,
   },
-  A2: { 
-    grammar: 80, vocabulary: 1200, reading: 12, writing: 10, listening: 15, quiz: 45, 
-    grammarAcc: 75, readingAcc: 75, quizAcc: 80, writingAvg: 70, listeningAcc: 72 
+  A2: {
+    grammar: 160, vocabulary: 550, reading: 15, writing: 5, listening: 14, quiz: 55,
+    grammarAcc: 70, readingAcc: 70, quizAcc: 73, writingAvg: 63, listeningAcc: 66,
   },
-  'A2+': { 
-    grammar: 110, vocabulary: 1800, reading: 18, writing: 15, listening: 25, quiz: 60, 
-    grammarAcc: 77, readingAcc: 77, quizAcc: 82, writingAvg: 73, listeningAcc: 75 
+  'A2+': {
+    grammar: 240, vocabulary: 800, reading: 22, writing: 8, listening: 22, quiz: 80,
+    grammarAcc: 72, readingAcc: 72, quizAcc: 75, writingAvg: 65, listeningAcc: 68,
   },
-  B1: { 
-    grammar: 150, vocabulary: 2500, reading: 25, writing: 20, listening: 40, quiz: 80, 
-    grammarAcc: 80, readingAcc: 80, quizAcc: 84, writingAvg: 75, listeningAcc: 78 
+  B1: {
+    grammar: 340, vocabulary: 1100, reading: 30, writing: 12, listening: 35, quiz: 115,
+    grammarAcc: 75, readingAcc: 75, quizAcc: 78, writingAvg: 68, listeningAcc: 70,
   },
-  'B1+': { 
-    grammar: 200, vocabulary: 3500, reading: 35, writing: 30, listening: 60, quiz: 110, 
-    grammarAcc: 82, readingAcc: 82, quizAcc: 86, writingAvg: 78, listeningAcc: 80 
+  'B1+': {
+    grammar: 460, vocabulary: 1500, reading: 42, writing: 18, listening: 55, quiz: 155,
+    grammarAcc: 78, readingAcc: 78, quizAcc: 81, writingAvg: 72, listeningAcc: 74,
   },
-  B2: { 
-    grammar: 280, vocabulary: 5000, reading: 50, writing: 45, listening: 90, quiz: 150, 
-    grammarAcc: 84, readingAcc: 84, quizAcc: 88, writingAvg: 80, listeningAcc: 82 
+  B2: {
+    grammar: 600, vocabulary: 2000, reading: 56, writing: 26, listening: 80, quiz: 205,
+    grammarAcc: 80, readingAcc: 80, quizAcc: 83, writingAvg: 75, listeningAcc: 77,
   },
-  'B2+': { 
-    grammar: 350, vocabulary: 6500, reading: 70, writing: 60, listening: 120, quiz: 200, 
-    grammarAcc: 85, readingAcc: 85, quizAcc: 89, writingAvg: 82, listeningAcc: 84 
+  'B2+': {
+    grammar: 760, vocabulary: 2700, reading: 74, writing: 36, listening: 110, quiz: 265,
+    grammarAcc: 82, readingAcc: 82, quizAcc: 85, writingAvg: 78, listeningAcc: 80,
   },
-  C1: { 
-    grammar: 450, vocabulary: 8000, reading: 100, writing: 80, listening: 160, quiz: 300, 
-    grammarAcc: 87, readingAcc: 87, quizAcc: 90, writingAvg: 85, listeningAcc: 86 
+  C1: {
+    grammar: 950, vocabulary: 3600, reading: 100, writing: 50, listening: 150, quiz: 340,
+    grammarAcc: 85, readingAcc: 85, quizAcc: 87, writingAvg: 82, listeningAcc: 83,
   },
 };
 
@@ -80,7 +81,6 @@ export class ProgressService {
     const user = await this.userModel.findById(userId).lean();
     if (!user) return null;
     const progress = await this.progressModel.findOne({ userId, level: user.currentLevel }).lean();
-    const today = new Date().toISOString().slice(0, 10);
     const last30 = new Date(); last30.setDate(last30.getDate() - 30);
     const activities = await this.activityModel
       .find({ userId, date: { $gte: last30.toISOString().slice(0, 10) } })
@@ -115,14 +115,12 @@ export class ProgressService {
     const lastDate = user.lastActivityDate ? new Date(user.lastActivityDate).toISOString().slice(0, 10) : null;
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
-    // Update streak
     if (lastDate !== today) {
       if (lastDate === yesterday) user.streak += 1;
       else if (lastDate !== today) user.streak = 1;
       user.lastActivityDate = new Date();
     }
 
-    // XP multiplier
     let multiplier = 1;
     if (user.streak >= 30) multiplier = 2.0;
     else if (user.streak >= 14) multiplier = 1.5;
@@ -130,7 +128,6 @@ export class ProgressService {
     const actualXp = Math.round(xpEarned * multiplier);
     user.xp += actualXp;
 
-    // Update stats
     const stats = user.stats || ({} as any);
     if (type === 'grammar') {
       stats.grammarCompleted = (stats.grammarCompleted || 0) + correctCount;
@@ -152,7 +149,6 @@ export class ProgressService {
     user.stats = stats;
     await user.save();
 
-    // Update daily activity
     await this.activityModel.findOneAndUpdate(
       { userId, date: today },
       {
@@ -162,7 +158,6 @@ export class ProgressService {
       { upsert: true },
     );
 
-    // Update level progress
     await this.updateLevelProgress(userId, user.currentLevel, type, accuracy, correctCount, totalItems, writingScore, vocabLearned);
 
     return { xpEarned: actualXp, streak: user.streak, multiplier };

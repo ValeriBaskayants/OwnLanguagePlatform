@@ -11,16 +11,17 @@ import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from './schemas/user.schema';
 import { LevelProgress, LevelProgressDocument } from '../progress/schemas/level-progress.schema';
 
-const LEVEL_REQUIREMENTS = {
-  A1:  { grammar: 40, vocabulary: 50, reading: 5,  writing: 0, listening: 0,  quiz: 20, grammarAcc: 70, readingAcc: 70, quizAcc: 70, writingAvg: 0,  listeningAcc: 0  },
-  'A1+': { grammar: 50, vocabulary: 60, reading: 6,  writing: 3, listening: 5,  quiz: 25, grammarAcc: 72, readingAcc: 72, quizAcc: 72, writingAvg: 65, listeningAcc: 65 },
-  A2:  { grammar: 60, vocabulary: 80, reading: 8,  writing: 5, listening: 8,  quiz: 30, grammarAcc: 75, readingAcc: 75, quizAcc: 75, writingAvg: 70, listeningAcc: 70 },
-  'A2+': { grammar: 70, vocabulary: 100, reading: 10, writing: 5, listening: 10, quiz: 40, grammarAcc: 78, readingAcc: 78, quizAcc: 78, writingAvg: 75, listeningAcc: 75 },
-  B1:  { grammar: 80, vocabulary: 120, reading: 12, writing: 6, listening: 12, quiz: 50, grammarAcc: 80, readingAcc: 80, quizAcc: 80, writingAvg: 78, listeningAcc: 78 },
-  'B1+': { grammar: 90, vocabulary: 140, reading: 14, writing: 7, listening: 14, quiz: 60, grammarAcc: 82, readingAcc: 82, quizAcc: 82, writingAvg: 80, listeningAcc: 80 },
-  B2:  { grammar: 100, vocabulary: 160, reading: 16, writing: 8, listening: 16, quiz: 70, grammarAcc: 84, readingAcc: 84, quizAcc: 84, writingAvg: 82, listeningAcc: 82 },
-  'B2+': { grammar: 110, vocabulary: 180, reading: 18, writing: 9, listening: 18, quiz: 80, grammarAcc: 86, readingAcc: 86, quizAcc: 86, writingAvg: 84, listeningAcc: 84 },
-  C1:  { grammar: 120, vocabulary: 200, reading: 20, writing: 10, listening: 20, quiz: 90, grammarAcc: 88, readingAcc: 88, quizAcc: 88, writingAvg: 86, listeningAcc: 86 },
+// Must match LEVEL_THRESHOLDS in progress.service.ts
+const LEVEL_REQUIREMENTS: Record<string, any> = {
+  A1:   { grammar: 60,  vocabulary: 200,  reading: 6,   writing: 0,  listening: 4,   quiz: 20,  grammarAcc: 65, readingAcc: 65, quizAcc: 68, writingAvg: 0,  listeningAcc: 60 },
+  'A1+':{ grammar: 100, vocabulary: 350,  reading: 10,  writing: 3,  listening: 8,   quiz: 35,  grammarAcc: 68, readingAcc: 68, quizAcc: 70, writingAvg: 60, listeningAcc: 63 },
+  A2:   { grammar: 160, vocabulary: 550,  reading: 15,  writing: 5,  listening: 14,  quiz: 55,  grammarAcc: 70, readingAcc: 70, quizAcc: 73, writingAvg: 63, listeningAcc: 66 },
+  'A2+':{ grammar: 240, vocabulary: 800,  reading: 22,  writing: 8,  listening: 22,  quiz: 80,  grammarAcc: 72, readingAcc: 72, quizAcc: 75, writingAvg: 65, listeningAcc: 68 },
+  B1:   { grammar: 340, vocabulary: 1100, reading: 30,  writing: 12, listening: 35,  quiz: 115, grammarAcc: 75, readingAcc: 75, quizAcc: 78, writingAvg: 68, listeningAcc: 70 },
+  'B1+':{ grammar: 460, vocabulary: 1500, reading: 42,  writing: 18, listening: 55,  quiz: 155, grammarAcc: 78, readingAcc: 78, quizAcc: 81, writingAvg: 72, listeningAcc: 74 },
+  B2:   { grammar: 600, vocabulary: 2000, reading: 56,  writing: 26, listening: 80,  quiz: 205, grammarAcc: 80, readingAcc: 80, quizAcc: 83, writingAvg: 75, listeningAcc: 77 },
+  'B2+':{ grammar: 760, vocabulary: 2700, reading: 74,  writing: 36, listening: 110, quiz: 265, grammarAcc: 82, readingAcc: 82, quizAcc: 85, writingAvg: 78, listeningAcc: 80 },
+  C1:   { grammar: 950, vocabulary: 3600, reading: 100, writing: 50, listening: 150, quiz: 340, grammarAcc: 85, readingAcc: 85, quizAcc: 87, writingAvg: 82, listeningAcc: 83 },
 };
 
 const NEXT_LEVELS: Record<string, string> = {
@@ -51,7 +52,6 @@ export class AuthService {
       },
     });
 
-    // Create initial level progress
     await this.createInitialProgress(user._id.toString(), 'A1');
 
     const token = this.jwtService.sign({ sub: user._id, email: user.email, role: user.role });

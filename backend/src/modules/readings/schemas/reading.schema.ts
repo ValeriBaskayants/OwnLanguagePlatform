@@ -23,18 +23,19 @@ export class Reading {
   @Prop({ default: 3 })
   estimatedMinutes: number;
 
-  @Prop({
+ @Prop({
     type: [
       {
         question: String,
         options: [String],
         correctIndex: Number,
         explanation: String,
-        type: String,
+        type: { type: String },
       },
     ],
     default: [],
   })
+
   questions: Array<{
     question: string;
     options: string[];
