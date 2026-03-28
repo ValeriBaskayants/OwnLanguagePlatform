@@ -17,14 +17,13 @@ export const grammarRulesService = {
 };
 
 export const vocabularyService = {
-  getAll: (params?: Record<string, string | number>) => api.get('/api/vocabulary', { params }).then(r => r.data),
+  getAll: (params?: Record<string, string | number | undefined>) => api.get('/api/vocabulary', { params }).then(r => r.data),
   getFlashcards: (level?: string, type?: string, limit = 20) =>
     api.get('/api/vocabulary/flashcards', { params: { level, type, limit } }).then(r => r.data),
   getUserProgress: () => api.get('/api/vocabulary/user-progress').then(r => r.data),
   review: (wordId: string, quality: 0 | 1 | 2 | 3) =>
     api.post('/api/vocabulary/review', { wordId, quality }).then(r => r.data),
 };
-
 export const readingsService = {
   getAll: (level?: string, topic?: string) => api.get('/api/readings', { params: { level, topic } }).then(r => r.data),
   getById: (id: string) => api.get(`/api/readings/${id}`).then(r => r.data),
