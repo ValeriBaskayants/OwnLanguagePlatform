@@ -23,13 +23,22 @@ const LANGS = [
   { code: 'hy', label: 'ՀՅ' },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
   const { theme, toggle } = useThemeStore();
   const navigate = useNavigate();
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    onClose?.();
+  };
 
   const levelColor = (lvl: string) => {
     if (lvl?.startsWith('A')) return '#4A7C59';
@@ -38,16 +47,33 @@ export default function Sidebar() {
     return '#E8A845';
   };
 
+  const handleNavClick = () => {
+    onClose?.();
+  };
+
   return (
-    <aside style={{
-      position: 'fixed', top: 0, left: 0, bottom: 0,
-      width: 'var(--sidebar-w)', zIndex: 100,
-      background: 'var(--surface)',
-      borderRight: '1px solid var(--border-color)',
-      display: 'flex', flexDirection: 'column',
-      boxShadow: 'var(--shadow-sm)',
-      overflowY: 'auto',
-    }}>
+    <aside
+      className={`app-sidebar${open ? ' app-sidebar--open' : ''}`}
+      style={{
+        position: 'fixed', top: 0, left: 0, bottom: 0,
+        width: 240,
+        zIndex: 100,
+        background: 'var(--surface)',
+        borderRight: '1px solid var(--border-color)',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: 'var(--shadow-sm)',
+        overflowY: 'auto',
+      }}
+    >
+      {/* Close button (mobile only) */}
+      <button
+        className="sidebar-close-btn"
+        onClick={onClose}
+        aria-label="Close menu"
+      >
+        ✕
+      </button>
+
       {/* Logo */}
       <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -62,7 +88,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Level + XP */}
         {user && (
           <div style={{ marginTop: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
@@ -90,38 +115,42 @@ export default function Sidebar() {
       {/* Nav */}
       <nav style={{ flex: 1, padding: '0.75rem 0' }}>
         {NAV_ITEMS.map(item => (
-          item.key === 'admin' && user?.role !== 'admin' ? null :
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === '/'}
+            onClick={handleNavClick}
             style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: '0.6rem 1.25rem',
+              padding: '0.65rem 1.25rem',
               fontSize: '0.88rem', fontWeight: isActive ? 600 : 400,
               color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
               background: isActive ? 'var(--accent-light)' : 'transparent',
               borderRight: isActive ? '3px solid var(--accent)' : '3px solid transparent',
               textDecoration: 'none',
               transition: 'all 0.15s ease',
+              minHeight: 44,
             })}
           >
             <span style={{ fontSize: '1rem', width: '1.2rem', textAlign: 'center' }}>{item.icon}</span>
             {t(`nav.${item.key}`)}
           </NavLink>
         ))}
+
         {user?.role === 'admin' && (
           <NavLink
             to="/admin"
+            onClick={handleNavClick}
             style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: '0.6rem 1.25rem',
+              padding: '0.65rem 1.25rem',
               fontSize: '0.88rem', fontWeight: isActive ? 600 : 400,
               color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
               background: isActive ? 'var(--accent-light)' : 'transparent',
               borderRight: isActive ? '3px solid var(--accent)' : '3px solid transparent',
               textDecoration: 'none',
               transition: 'all 0.15s ease',
+              minHeight: 44,
             })}
           >
             <span style={{ fontSize: '1rem', width: '1.2rem', textAlign: 'center' }}>⚙️</span>
@@ -132,14 +161,13 @@ export default function Sidebar() {
 
       {/* Bottom controls */}
       <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--border-color)' }}>
-        {/* Language switcher */}
         <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.75rem' }}>
           {LANGS.map(l => (
             <button
               key={l.code}
               onClick={() => i18n.changeLanguage(l.code)}
               style={{
-                flex: 1, padding: '0.3rem',
+                flex: 1, padding: '0.35rem',
                 fontSize: '0.7rem', fontWeight: 600,
                 fontFamily: 'DM Mono, monospace',
                 borderRadius: '6px', border: '1px solid',
@@ -147,6 +175,7 @@ export default function Sidebar() {
                 background: i18n.language === l.code ? 'var(--accent-light)' : 'transparent',
                 color: i18n.language === l.code ? 'var(--accent)' : 'var(--text-muted)',
                 cursor: 'pointer', transition: 'all 0.15s',
+                minHeight: 36,
               }}
             >
               {l.label}
@@ -154,30 +183,30 @@ export default function Sidebar() {
           ))}
         </div>
 
-        {/* Theme toggle */}
         <button
           onClick={toggle}
           style={{
-            width: '100%', padding: '0.45rem',
+            width: '100%', padding: '0.5rem',
             borderRadius: '8px', border: '1px solid var(--border-color)',
             background: 'var(--surface-elevated)',
             color: 'var(--text-secondary)', fontSize: '0.82rem',
             cursor: 'pointer', display: 'flex', alignItems: 'center',
             justifyContent: 'center', gap: '0.4rem',
             marginBottom: '0.5rem', transition: 'all 0.15s',
+            minHeight: 40,
           }}
         >
           {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
         </button>
 
-        {/* Logout */}
         <button
           onClick={handleLogout}
           style={{
-            width: '100%', padding: '0.45rem',
+            width: '100%', padding: '0.5rem',
             borderRadius: '8px', border: '1px solid var(--border-color)',
             background: 'transparent', color: 'var(--text-muted)',
             fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.15s',
+            minHeight: 40,
           }}
         >
           {t('auth.logout')} →
