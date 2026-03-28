@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { readingsService, sessionsService, translateWord } from '../services';
 import { Reading, SessionAnswer, LEVELS } from '../types';
 import { Spinner, LevelBadge, ProgressBar, XPChip, Card, EmptyState } from '../components/ui';
 
+// ─── Tooltip state ─────────────────────────────────────────────────────────────
+interface TooltipState { text: string; x: number; y: number; translation: string; }
+
+// ─── Reader ───────────────────────────────────────────────────────────────────
 function ReaderView({ reading, onBack }: { reading: Reading; onBack: (score?: number, xp?: number) => void }) {
   const { t, i18n } = useTranslation();
   const [phase, setPhase] = useState<'read' | 'questions' | 'result'>('read');
@@ -11,28 +15,48 @@ function ReaderView({ reading, onBack }: { reading: Reading; onBack: (score?: nu
   const [selected, setSelected] = useState<number | null>(null);
   const [qIdx, setQIdx] = useState(0);
   const [result, setResult] = useState<any>(null);
-  const [tooltip, setTooltip] = useState<{ word: string; x: number; y: number; translation: string } | null>(null);
-  const startTime = Date.now();
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const startTime = useRef(Date.now());
 
-  const handleWordClick = async (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName !== 'SPAN') return;
-    const word = target.textContent?.replace(/[^a-zA-Z]/g, '') || '';
-    if (word.length < 3) return;
-    const rect = target.getBoundingClientRect();
-    setTooltip({ word, x: rect.left, y: rect.top - 40, translation: '…' });
-    const translation = await translateWord(word, i18n.language === 'ru' ? 'ru' : i18n.language === 'hy' ? 'hy' : 'ru');
-    setTooltip(prev => prev?.word === word ? { ...prev, translation } : prev);
-  };
+  // ── Hide tooltip on click outside or scroll ──
+  useEffect(() => {
+    if (!tooltip) return;
+    const hide = (e: Event) => {
+      if (tooltipRef.current?.contains(e.target as Node)) return;
+      setTooltip(null);
+    };
+    document.addEventListener('mousedown', hide);
+    document.addEventListener('scroll', hide, { passive: true });
+    document.addEventListener('touchstart', hide, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', hide);
+      document.removeEventListener('scroll', hide);
+      document.removeEventListener('touchstart', hide);
+    };
+  }, [tooltip]);
 
-  const renderContent = () => {
-    return reading.content.split(' ').map((word, i) => (
-      <span key={i} onClick={handleWordClick} style={{ cursor: 'pointer', transition: 'background 0.1s' }}
-        onMouseEnter={e => (e.target as HTMLElement).style.background = 'var(--accent-light)'}
-        onMouseLeave={e => (e.target as HTMLElement).style.background = 'transparent'}>
-        {word}{' '}
-      </span>
-    ));
+  // ── Detect text selection (works for single words AND phrases) ──
+  const handleMouseUp = async () => {
+    const selection = window.getSelection();
+    const selected = selection?.toString().trim();
+    if (!selected || selected.length < 2 || selected.length > 300) return;
+
+    try {
+      const range = selection!.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const x = Math.min(
+        Math.max(rect.left + rect.width / 2, 100),
+        window.innerWidth - 100
+      );
+      const y = rect.top > 60 ? rect.top - 8 : rect.bottom + 8;
+
+      setTooltip({ text: selected, x, y, translation: '…' });
+
+      const lang = i18n.language === 'hy' ? 'hy' : 'ru';
+      const tr = await translateWord(selected, lang);
+      setTooltip(prev => prev?.text === selected ? { ...prev, translation: tr } : prev);
+    } catch { /* ignore */ }
   };
 
   const selectAnswer = (idx: number) => {
@@ -50,7 +74,8 @@ function ReaderView({ reading, onBack }: { reading: Reading; onBack: (score?: nu
         isCorrect: a === reading.questions[i].correctIndex, timeSpentMs: 0, topic: reading.topic,
       }));
       const res = await sessionsService.create({
-        type: 'reading', level: reading.level, answers: sessionAnswers, durationMs: Date.now() - startTime,
+        type: 'reading', level: reading.level, answers: sessionAnswers,
+        durationMs: Date.now() - startTime.current,
       });
       setResult({ score, correct, total: reading.questions.length, xpEarned: res.xpEarned });
       setPhase('result');
@@ -85,7 +110,13 @@ function ReaderView({ reading, onBack }: { reading: Reading; onBack: (score?: nu
             }
             return (
               <button key={i} onClick={() => selectAnswer(i)} disabled={selected !== null}
-                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '0.8rem 1rem', marginBottom: '0.5rem', borderRadius: '8px', border: `1.5px solid ${border}`, background: bg, color, cursor: selected !== null ? 'default' : 'pointer', fontSize: '0.9rem', transition: 'all 0.15s' }}>
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '0.8rem 1rem', marginBottom: '0.5rem', borderRadius: '8px',
+                  border: `1.5px solid ${border}`, background: bg, color,
+                  cursor: selected !== null ? 'default' : 'pointer',
+                  fontSize: '0.9rem', transition: 'all 0.15s',
+                }}>
                 {opt}
               </button>
             );
@@ -94,7 +125,9 @@ function ReaderView({ reading, onBack }: { reading: Reading; onBack: (score?: nu
             <div className="fade-in">
               {q.explanation && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0.75rem 0' }}>📝 {q.explanation}</p>}
               <div style={{ textAlign: 'right' }}>
-                <button className="btn btn-primary" onClick={nextQ}>{qIdx + 1 >= reading.questions.length ? 'See Results' : 'Next →'}</button>
+                <button className="btn btn-primary" onClick={nextQ}>
+                  {qIdx + 1 >= reading.questions.length ? 'See Results' : 'Next →'}
+                </button>
               </div>
             </div>
           )}
@@ -105,15 +138,44 @@ function ReaderView({ reading, onBack }: { reading: Reading; onBack: (score?: nu
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
+      {/* Tooltip — fixed position, pointer-events:none so it doesn't block selection */}
       {tooltip && (
-        <div onClick={() => setTooltip(null)} style={{ position: 'fixed', top: Math.max(10, tooltip.y), left: Math.max(10, tooltip.x), background: 'var(--text-primary)', color: 'var(--surface)', padding: '0.4rem 0.85rem', borderRadius: '8px', fontSize: '0.85rem', zIndex: 500, boxShadow: 'var(--shadow-md)', cursor: 'pointer' }}>
-          <strong>{tooltip.word}</strong>: {tooltip.translation}
+        <div
+          ref={tooltipRef}
+          style={{
+            position: 'fixed',
+            left: tooltip.x,
+            top: tooltip.y,
+            transform: 'translateX(-50%) translateY(-100%)',
+            background: 'var(--text-primary)',
+            color: 'var(--surface)',
+            padding: '0.45rem 0.9rem',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            zIndex: 500,
+            boxShadow: 'var(--shadow-md)',
+            maxWidth: 280,
+            textAlign: 'center',
+            pointerEvents: 'none',
+            lineHeight: 1.4,
+          }}
+        >
+          <strong style={{ display: 'block', marginBottom: '0.15rem' }}>{tooltip.text}</strong>
+          <span style={{ opacity: 0.85 }}>{tooltip.translation}</span>
+          <div style={{
+            position: 'absolute', bottom: -5, left: '50%',
+            transform: 'translateX(-50%)',
+            width: 0, height: 0,
+            borderLeft: '5px solid transparent',
+            borderRight: '5px solid transparent',
+            borderTop: '5px solid var(--text-primary)',
+          }} />
         </div>
       )}
 
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <button className="btn btn-ghost btn-sm" onClick={() => onBack()}>← Back</button>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <LevelBadge level={reading.level} />
           <span className="tag">⏱ {reading.estimatedMinutes} min</span>
           <span className="tag">{reading.wordCount} words</span>
@@ -121,11 +183,24 @@ function ReaderView({ reading, onBack }: { reading: Reading; onBack: (score?: nu
       </div>
 
       <Card style={{ marginBottom: '1.5rem', padding: '2.5rem' }}>
-        <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', marginBottom: '1.5rem' }}>{reading.title}</h1>
-        <div style={{ fontSize: '1.05rem', lineHeight: 1.9, color: 'var(--text-secondary)' }} onClick={handleWordClick}>
-          {renderContent()}
+        <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', marginBottom: '1.5rem' }}>
+          {reading.title}
+        </h1>
+
+        {/* Reading content — select any text to translate */}
+        <div
+          onMouseUp={handleMouseUp}
+          style={{
+            fontSize: '1.05rem', lineHeight: 1.9, color: 'var(--text-secondary)',
+            userSelect: 'text', cursor: 'text',
+          }}
+        >
+          {reading.content}
         </div>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '1.25rem' }}>💡 Click any word for translation</p>
+
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '1.25rem' }}>
+          💡 Select any word or phrase for translation
+        </p>
       </Card>
 
       {reading.questions?.length > 0 && (
@@ -139,9 +214,10 @@ function ReaderView({ reading, onBack }: { reading: Reading; onBack: (score?: nu
   );
 }
 
+// ─── List Page ─────────────────────────────────────────────────────────────────
 export default function ReadingPage() {
   const { t } = useTranslation();
-  const [readings, setReadings] = useState<Reading[]>([]);
+  const [readings, setReadings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterLevel, setFilterLevel] = useState('');
   const [selected, setSelected] = useState<Reading | null>(null);
@@ -150,7 +226,7 @@ export default function ReadingPage() {
     readingsService.getAll(filterLevel).then(data => { setReadings(data); setLoading(false); });
   }, [filterLevel]);
 
-  const openReading = async (r: Reading) => {
+  const openReading = async (r: any) => {
     const full = await readingsService.getById(r._id);
     setSelected(full);
   };
@@ -167,30 +243,42 @@ export default function ReadingPage() {
         <h1>📄 {t('reading.title')}</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Read and answer comprehension questions</p>
       </div>
+
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-        <button onClick={() => setFilterLevel('')} style={{ padding: '0.35rem 0.85rem', borderRadius: '100px', border: '1px solid', borderColor: !filterLevel ? 'var(--accent)' : 'var(--border-color)', background: !filterLevel ? 'var(--accent-light)' : 'transparent', color: !filterLevel ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>All</button>
-        {LEVELS.map(l => <button key={l} onClick={() => setFilterLevel(l)} style={{ padding: '0.35rem 0.85rem', borderRadius: '100px', border: '1px solid', borderColor: filterLevel === l ? 'var(--accent)' : 'var(--border-color)', background: filterLevel === l ? 'var(--accent-light)' : 'transparent', color: filterLevel === l ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Mono, monospace' }}>{l}</button>)}
+        <button onClick={() => setFilterLevel('')}
+          style={{ padding: '0.35rem 0.85rem', borderRadius: '100px', border: '1px solid', borderColor: !filterLevel ? 'var(--accent)' : 'var(--border-color)', background: !filterLevel ? 'var(--accent-light)' : 'transparent', color: !filterLevel ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
+          All
+        </button>
+        {LEVELS.map(l => (
+          <button key={l} onClick={() => setFilterLevel(l)}
+            style={{ padding: '0.35rem 0.85rem', borderRadius: '100px', border: '1px solid', borderColor: filterLevel === l ? 'var(--accent)' : 'var(--border-color)', background: filterLevel === l ? 'var(--accent-light)' : 'transparent', color: filterLevel === l ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Mono, monospace' }}>
+            {l}
+          </button>
+        ))}
       </div>
-      {loading ? <div style={{ textAlign: 'center', paddingTop: '3rem' }}><Spinner size="lg" /></div>
-        : readings.length === 0 ? <EmptyState icon="📄" title="No readings yet" description="Add reading texts from the Admin panel." />
-        : (
-          <div className="grid-2">
-            {readings.map(r => (
-              <Card key={r._id} onClick={() => openReading(r)} style={{ cursor: 'pointer' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  <LevelBadge level={r.level} />
-                  <span className="tag">{r.topic}</span>
-                </div>
-                <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{r.title}</h3>
-                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                  <span>⏱ {r.estimatedMinutes} min</span>
-                  <span>📝 {r.wordCount} words</span>
-                  <span>❓ {r.questions?.length || 0} questions</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', paddingTop: '3rem' }}><Spinner size="lg" /></div>
+      ) : readings.length === 0 ? (
+        <EmptyState icon="📄" title="No readings yet" description="Add reading texts from the Admin panel." />
+      ) : (
+        <div className="grid-2">
+          {readings.map(r => (
+            <Card key={r._id} onClick={() => openReading(r)} style={{ cursor: 'pointer' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                <LevelBadge level={r.level} />
+                <span className="tag">{r.topic}</span>
+              </div>
+              <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{r.title}</h3>
+              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                <span>⏱ {r.estimatedMinutes} min</span>
+                <span>📝 {r.wordCount} words</span>
+                <span>❓ {r.questionCount ?? r.questions?.length ?? 0} questions</span>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

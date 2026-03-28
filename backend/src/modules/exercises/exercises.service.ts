@@ -24,14 +24,30 @@ export class ExercisesService {
 
   async bulkCreate(exercises: any[]) {
     let inserted = 0, skipped = 0, errors = 0;
+    const errorMessages: string[] = [];
+
+    if (!exercises || exercises.length === 0) {
+      return { inserted: 0, skipped: 0, errors: 0, message: 'Array "exercises" is empty or missing in JSON' };
+    }
+
     for (const ex of exercises) {
       try {
+        if (!ex.sentence || !ex.level || !ex.blanks) {
+          errors++;
+          errorMessages.push(`Missing fields: sentence="${ex.sentence?.slice(0,30)}", level="${ex.level}", hasBlanks=${!!ex.blanks}`);
+          continue;
+        }
         const exists = await this.model.findOne({ sentence: ex.sentence });
         if (exists) { skipped++; continue; }
         await this.model.create(ex);
         inserted++;
-      } catch { errors++; }
+      } catch (err: any) {
+        errors++;
+        const msg = err?.message?.slice(0, 120) || 'Unknown error';
+        errorMessages.push(`"${ex?.sentence?.slice(0, 40) || '?'}": ${msg}`);
+        console.error('[ExerciseImport]', msg);
+      }
     }
-    return { inserted, skipped, errors };
+    return { inserted, skipped, errors, errorMessages };
   }
 }

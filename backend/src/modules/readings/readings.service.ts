@@ -11,7 +11,11 @@ export class ReadingsService {
     const filter: any = {};
     if (level) filter.level = level;
     if (topic) filter.topic = { $regex: topic, $options: 'i' };
-    return this.model.find(filter).select('-questions').lean();
+    return this.model.aggregate([
+      { $match: filter },
+      { $addFields: { questionCount: { $size: { $ifNull: ['$questions', []] } } } },
+      { $project: { content: 0, questions: 0 } },
+    ]);
   }
 
   async findById(id: string) {
@@ -24,11 +28,15 @@ export class ReadingsService {
     let inserted = 0, skipped = 0, errors = 0;
     const errorMessages: string[] = [];
 
+    if (!readings || readings.length === 0) {
+      return { inserted: 0, skipped: 0, errors: 0, message: 'Array "readings" is empty or missing' };
+    }
+
     for (const r of readings) {
       try {
         if (!r.title || !r.level || !r.topic || !r.content) {
           errors++;
-          errorMessages.push(`Missing required fields: title="${r.title}", level="${r.level}", topic="${r.topic}", hasContent=${!!r.content}`);
+          errorMessages.push(`Missing: title="${r.title}", level="${r.level}", topic="${r.topic}", hasContent=${!!r.content}`);
           continue;
         }
         r.wordCount = r.content.trim().split(/\s+/).length || 0;
@@ -39,8 +47,9 @@ export class ReadingsService {
         inserted++;
       } catch (err: any) {
         errors++;
-        errorMessages.push(`"${r.title || 'unknown'}": ${err?.message || 'Unknown error'}`);
-        console.error('Reading import error:', err?.message, r.title);
+        const msg = err?.message?.slice(0, 120) || 'Unknown';
+        errorMessages.push(`"${r.title || '?'}": ${msg}`);
+        console.error('[ReadingImport]', msg);
       }
     }
     return { inserted, skipped, errors, errorMessages };

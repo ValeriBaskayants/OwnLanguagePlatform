@@ -23,7 +23,7 @@ export default function MultipleChoicePage() {
   const [startTime, setStartTime] = useState(0);
   const [questionStart, setQuestionStart] = useState(0);
   const [result, setResult] = useState<any>(null);
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(20);
   const [useTimer, setUseTimer] = useState(false);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function MultipleChoicePage() {
     const shuffled = shuffle(data as MultipleChoiceQuestion[]).slice(0, 10);
     setQueue(shuffled); setIdx(0); setAnswers([]);
     setSelected(null); setStartTime(Date.now()); setQuestionStart(Date.now());
-    setTimer(30); setPhase('quiz'); setLoading(false);
+    setTimer(20); setPhase('quiz'); setLoading(false);
   };
 
   const handleSelect = async (optIdx: number) => {
@@ -64,7 +64,7 @@ export default function MultipleChoicePage() {
       setResult(res); setPhase('result');
     } else {
       setIdx(i => i + 1); setSelected(null);
-      setTimer(30); setQuestionStart(Date.now());
+      setTimer(20); setQuestionStart(Date.now());
     }
   };
 

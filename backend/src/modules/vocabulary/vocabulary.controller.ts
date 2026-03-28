@@ -14,7 +14,7 @@ export class VocabularyController {
 
   @Get('flashcards')
   getFlashcards(@Request() req: any, @Query() q: any) {
-    return this.service.getFlashcards(req.user.sub, q.level, +q.limit || 20);
+    return this.service.getFlashcards(req.user.sub, q.level, q.type, +q.limit || 20);
   }
 
   @Get('user-progress')

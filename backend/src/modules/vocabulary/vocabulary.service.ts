@@ -45,9 +45,30 @@ export class VocabularyService {
     return this.vocabModel.find(filter).limit(query.limit || 200).lean();
   }
 
-  async getFlashcards(userId: string, level?: string, limit = 20) {
+  // New words (never answered): status not in DB or status='new'
+  async getNewWords(userId: string, level?: string, type?: string, limit = 20) {
+    const learnedIds = await this.progressModel.distinct('wordId', { userId });
+    const filter: any = { _id: { $nin: learnedIds } };
+    if (level) filter.level = level;
+    if (type) filter.type = type;
+    return this.vocabModel.find(filter).limit(limit).lean();
+  }
+
+  // Words due for review (previously seen, now due)
+  async getDueWords(userId: string, level?: string, type?: string, limit = 20) {
     const now = new Date();
-    // Get due cards
+    const dueProgress = await this.progressModel
+      .find({ userId, status: { $ne: 'new' }, nextReviewDate: { $lte: now } })
+      .populate('wordId')
+      .limit(limit)
+      .lean();
+    return dueProgress
+      .map((p: any) => p.wordId)
+      .filter(Boolean) as any[];
+  }
+
+  async getFlashcards(userId: string, level?: string, type?: string, limit = 20) {
+    const now = new Date();
     const dueProgress = await this.progressModel
       .find({ userId, nextReviewDate: { $lte: now } })
       .populate('wordId')
@@ -58,17 +79,16 @@ export class VocabularyService {
       return dueProgress.map((p: any) => ({ progress: p, word: p.wordId }));
     }
 
-    // Fill with new words
     const learnedWordIds = await this.progressModel.distinct('wordId', { userId });
     const vocabFilter: any = { _id: { $nin: learnedWordIds } };
     if (level) vocabFilter.level = level;
+    if (type) vocabFilter.type = type;
 
     const newWords = await this.vocabModel
       .find(vocabFilter)
       .limit(limit - dueProgress.length)
       .lean();
 
-    // Create progress entries for new words
     for (const word of newWords) {
       await this.progressModel.findOneAndUpdate(
         { userId, wordId: word._id },
@@ -85,6 +105,15 @@ export class VocabularyService {
       ...dueProgress.map((p: any) => ({ progress: p, word: p.wordId })),
       ...newWords.map(w => ({ progress: null, word: w })),
     ];
+  }
+
+  // Get distractor pool for quiz
+  async getDistractorPool(level?: string, type?: string, excludeId?: string, limit = 100) {
+    const filter: any = {};
+    if (level) filter.level = level;
+    if (type) filter.type = type;
+    if (excludeId) filter._id = { $ne: excludeId };
+    return this.vocabModel.find(filter).limit(limit).lean();
   }
 
   async reviewWord(userId: string, wordId: string, quality: 0 | 1 | 2 | 3) {
@@ -110,14 +139,29 @@ export class VocabularyService {
 
   async bulkCreate(words: any[]) {
     let inserted = 0, skipped = 0, errors = 0;
+    const errorMessages: string[] = [];
+
+    if (!words || words.length === 0) {
+      return { inserted: 0, skipped: 0, errors: 0, message: 'Array "vocabulary" is empty or missing' };
+    }
+
     for (const word of words) {
       try {
+        if (!word.word || !word.level || !word.definition) {
+          errors++;
+          errorMessages.push(`Missing: word="${word.word}", level="${word.level}", hasDefinition=${!!word.definition}`);
+          continue;
+        }
         const exists = await this.vocabModel.findOne({ word: word.word });
         if (exists) { skipped++; continue; }
         await this.vocabModel.create(word);
         inserted++;
-      } catch { errors++; }
+      } catch (err: any) {
+        errors++;
+        errorMessages.push(`"${word.word || '?'}": ${err?.message?.slice(0, 80)}`);
+        console.error('[VocabImport]', err?.message);
+      }
     }
-    return { inserted, skipped, errors };
+    return { inserted, skipped, errors, errorMessages };
   }
 }
