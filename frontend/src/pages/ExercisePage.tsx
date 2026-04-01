@@ -71,6 +71,7 @@ export default function ExercisePage() {
   const [startTime, setStartTime] = useState(0);
   const [questionStart, setQuestionStart] = useState(0);
   const [sessionResult, setSessionResult] = useState<any>(null);
+  const [showExplanation, setShowExplanation] = useState(false); // Стейт для лампочки
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export default function ExercisePage() {
       setUserInputs(new Array(sorted[0]?.blanks?.length || 1).fill(''));
       setChecked(false);
       setBlankResults([]);
+      setShowExplanation(false); // Сбрасываем лампочку
       setStartTime(Date.now());
       setQuestionStart(Date.now());
       setPhase('quiz');
@@ -158,6 +160,7 @@ export default function ExercisePage() {
       setUserInputs(new Array(next?.blanks?.length || 1).fill(''));
       setChecked(false);
       setBlankResults([]);
+      setShowExplanation(false); // Скрываем объяснение для нового вопроса
       setQuestionStart(Date.now());
       setTimeout(() => inputRefs.current[0]?.focus(), 50);
     }
@@ -217,7 +220,7 @@ export default function ExercisePage() {
                     setUserInputs(next);
                   }}
                   onKeyDown={e => handleKeyDown(e, i)}
-                  placeholder={ex.blanks[i]?.hint ? `(${ex.blanks[i].hint})` : '...'}
+                  placeholder="" // Убрали placeholder полностью, чтобы не мешал
                   style={{
                     display: 'inline-block',
                     width: '140px',
@@ -387,7 +390,7 @@ export default function ExercisePage() {
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <LevelBadge level={current.level} />
             <DifficultyBadge difficulty={current.difficulty} />
-            <span className="tag">{current.topic}</span>
+            {/* Тема (topic) убрана отсюда, чтобы не было подсказок! */}
             {isMultiBlank && (
               <span className="badge badge-accent">{current.blanks.length} blanks</span>
             )}
@@ -402,28 +405,10 @@ export default function ExercisePage() {
           })()}
         </div>
 
-        {/* Hints row */}
-        {isMultiBlank && !checked && (
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            {current.blanks.map((b, i) => b.hint && (
-              <span key={i} style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--surface-elevated)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
-                [{i + 1}] {b.hint}
-              </span>
-            ))}
-          </div>
-        )}
-
         {/* Sentence */}
         <div style={{ padding: '2rem 1.5rem', background: 'var(--surface-elevated)', borderRadius: '12px', marginBottom: '1.5rem' }}>
           {renderSentence(current)}
         </div>
-
-        {/* Single-blank hint */}
-        {!isMultiBlank && current.blanks[0]?.hint && !checked && (
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.75rem', textAlign: 'center' }}>
-            💡 {current.blanks[0].hint}
-          </div>
-        )}
 
         {/* Result feedback */}
         {checked && (
@@ -453,10 +438,43 @@ export default function ExercisePage() {
               </div>
             )}
 
+            {/* Блок с лампочкой для объяснения */}
             {current.explanation && (
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                📝 {current.explanation}
-              </p>
+              <div style={{ marginTop: '0.75rem' }}>
+                <button
+                  onClick={() => setShowExplanation(!showExplanation)}
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    opacity: showExplanation ? 1 : 0.7
+                  }}
+                  title="Показать объяснение"
+                >
+                  💡
+                </button>
+                {showExplanation && (
+                  <div className="fade-in" style={{ 
+                    fontSize: '0.875rem', 
+                    color: 'var(--text-secondary)', 
+                    marginTop: '0.75rem',
+                    padding: '0.75rem',
+                    background: 'var(--surface)',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid var(--accent)'
+                  }}>
+                    📝 {current.explanation}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

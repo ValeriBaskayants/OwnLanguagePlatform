@@ -13,7 +13,7 @@ const IMPORT_TYPES = [
       "topic": "Present Simple",
       "level": "A1",
       "difficulty": "easy",
-      "sentence": "She _____ to school every day.",
+      "sentence": "She _____ (go) to school every day.",
       "blanks": [{ "position": 0, "answer": "goes", "hint": "3rd person" }],
       "explanation": "We use 's' with he/she/it in Present Simple.",
       "tags": ["a1", "present-simple"]
