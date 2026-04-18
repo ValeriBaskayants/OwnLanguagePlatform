@@ -1,86 +1,91 @@
 import api from './api.client';
 
 export const authService = {
-  register: (email: string, password: string) => api.post('/api/auth/register', { email, password }).then(r => r.data),
-  login: (email: string, password: string) => api.post('/api/auth/login', { email, password }).then(r => r.data),
-  getMe: () => api.get('/api/auth/me').then(r => r.data),
+  register: (email: string, password: string) => 
+    api.post('/auth/register', { email, password }).then((r: { data: any; }) => r.data),
+    
+  login: (email: string, password: string) => 
+    api.post('/auth/login', { email, password }).then((r: { data: any; }) => r.data),
+    
+  getMe: () => 
+    api.get('/auth/me').then((r: { data: any; }) => r.data),
 };
 
 export const exercisesService = {
-  getAll: (params?: Record<string, string | number>) => api.get('/api/exercises', { params }).then(r => r.data),
-  getTopics: (level?: string) => api.get('/api/exercises/topics', { params: { level } }).then(r => r.data),
+  getAll: (params?: Record<string, string | number>) => api.get('/api/exercises', { params }).then((r: { data: any; }) => r.data),
+  getTopics: (level?: string) => api.get('/api/exercises/topics', { params: { level } }).then((r: { data: any; }) => r.data),
 };
 
 export const grammarRulesService = {
-  getAll: (level?: string) => api.get('/api/grammar-rules', { params: { level } }).then(r => r.data),
-  getBySlug: (slug: string) => api.get(`/api/grammar-rules/${slug}`).then(r => r.data),
+  getAll: (level?: string) => api.get('/api/grammar-rules', { params: { level } }).then((r: { data: any; }) => r.data),
+  getBySlug: (slug: string) => api.get(`/api/grammar-rules/${slug}`).then((r: { data: any; }) => r.data),
 };
 
 export const vocabularyService = {
-  getAll: (params?: Record<string, string | number | undefined>) => api.get('/api/vocabulary', { params }).then(r => r.data),
+  getAll: (params?: Record<string, string | number | undefined>) => api.get('/api/vocabulary', { params }).then((r: { data: any; }) => r.data),
   getFlashcards: (level?: string, type?: string, limit = 20) =>
-    api.get('/api/vocabulary/flashcards', { params: { level, type, limit } }).then(r => r.data),
-  getUserProgress: () => api.get('/api/vocabulary/user-progress').then(r => r.data),
+    api.get('/api/vocabulary/flashcards', { params: { level, type, limit } }).then((r: { data: any; }) => r.data),
+  getUserProgress: () => api.get('/api/vocabulary/user-progress').then((r: { data: any; }) => r.data),
   review: (wordId: string, quality: 0 | 1 | 2 | 3) =>
-    api.post('/api/vocabulary/review', { wordId, quality }).then(r => r.data),
+    api.post('/api/vocabulary/review', { wordId, quality }).then((r: { data: any; }) => r.data),
 };
 export const readingsService = {
-  getAll: (level?: string, topic?: string) => api.get('/api/readings', { params: { level, topic } }).then(r => r.data),
-  getById: (id: string) => api.get(`/api/readings/${id}`).then(r => r.data),
+  getAll: (level?: string, topic?: string) => api.get('/api/readings', { params: { level, topic } }).then((r: { data: any; }) => r.data),
+  getById: (id: string) => api.get(`/api/readings/${id}`).then((r: { data: any; }) => r.data),
 };
 
 export const multipleChoiceService = {
-  getAll: (params?: Record<string, string | number>) => api.get('/api/multiple-choice', { params }).then(r => r.data),
+  getAll: (params?: Record<string, string | number>) => api.get('/api/multiple-choice', { params }).then((r: { data: any; }) => r.data),
 };
 
 export const listeningService = {
-  getAll: (params?: Record<string, string>) => api.get('/api/listening', { params }).then(r => r.data),
+  getAll: (params?: Record<string, string>) => api.get('/api/listening', { params }).then((r: { data: any; }) => r.data),
 };
 
 export const writingService = {
-  getPrompts: (level?: string) => api.get('/api/writing/prompts', { params: { level } }).then(r => r.data),
-  getPromptById: (id: string) => api.get(`/api/writing/prompts/${id}`).then(r => r.data),
-  submit: (promptId: string, text: string) => api.post('/api/writing/submit', { promptId, text }).then(r => r.data),
-  getSubmissions: (promptId?: string) => api.get('/api/writing/submissions', { params: { promptId } }).then(r => r.data),
-  getSubmission: (id: string) => api.get(`/api/writing/submissions/${id}`).then(r => r.data),
+  getPrompts: (level?: string) => api.get('/api/writing/prompts', { params: { level } }).then((r: { data: any; }) => r.data),
+  getPromptById: (id: string) => api.get(`/api/writing/prompts/${id}`).then((r: { data: any; }) => r.data),
+  submit: (promptId: string, text: string) => api.post('/api/writing/submit', { promptId, text }).then((r: { data: any; }) => r.data),
+  getSubmissions: (promptId?: string) => api.get('/api/writing/submissions', { params: { promptId } }).then((r: { data: any; }) => r.data),
+  getSubmission: (id: string) => api.get(`/api/writing/submissions/${id}`).then((r: { data: any; }) => r.data),
 };
 
 export const sessionsService = {
-  create: (data: any) => api.post('/api/sessions', data).then(r => r.data),
-  getHistory: () => api.get('/api/sessions/history').then(r => r.data),
+  create: (data: any) => api.post('/api/sessions', data).then((r: { data: any; }) => r.data),
+  getHistory: () => api.get('/api/sessions/history').then((r: { data: any; }) => r.data),
 };
 
 export const mistakesService = {
-  getAll: (itemType?: string) => api.get('/api/mistakes', { params: { itemType } }).then(r => r.data),
-  getWeakSpots: () => api.get('/api/mistakes/weak-spots').then(r => r.data),
+  getAll: (itemType?: string) => api.get('/api/mistakes', { params: { itemType } }).then((r: { data: any; }) => r.data),
+  getWeakSpots: () => api.get('/api/mistakes/weak-spots').then((r: { data: any; }) => r.data),
 };
 
 export const progressService = {
-  get: () => api.get('/api/progress').then(r => r.data),
-  getDashboard: () => api.get('/api/progress/dashboard').then(r => r.data),
-  getStreak: () => api.get('/api/progress/streak').then(r => r.data),
+  get: () => api.get('/api/progress').then((r: { data: any; }) => r.data),
+  getDashboard: () => api.get('/api/progress/dashboard').then((r: { data: any; }) => r.data),
+  getStreak: () => api.get('/api/progress/streak').then((r: { data: any; }) => r.data),
 };
 
 export const levelTestService = {
-  getQuestions: () => api.get('/api/level-test/questions').then(r => r.data),
-  submit: (data: any) => api.post('/api/level-test/submit', data).then(r => r.data),
+  getQuestions: () => api.get('/api/level-test/questions').then((r: { data: any; }) => r.data),
+  submit: (data: any) => api.post('/api/level-test/submit', data).then((r: { data: any; }) => r.data),
 };
 
 export const bookmarksService = {
-  getAll: () => api.get('/api/bookmarks').then(r => r.data),
-  toggle: (itemId: string, itemType: string) => api.post('/api/bookmarks', { itemId, itemType }).then(r => r.data),
-  remove: (id: string) => api.delete(`/api/bookmarks/${id}`).then(r => r.data),
+  getAll: () => api.get('/api/bookmarks').then((r: { data: any; }) => r.data),
+  toggle: (itemId: string, itemType: string) => api.post('/api/bookmarks', { itemId, itemType }).then((r: { data: any; }) => r.data),
+  remove: (id: string) => api.delete(`/api/bookmarks/${id}`).then((r: { data: any; }) => r.data),
 };
 
 export const adminService = {
-  importExercises: (data: any) => api.post('/api/admin/import/exercises', data).then(r => r.data),
-  importGrammarRules: (data: any) => api.post('/api/admin/import/grammar-rules', data).then(r => r.data),
-  importVocabulary: (data: any) => api.post('/api/admin/import/vocabulary', data).then(r => r.data),
-  importReadings: (data: any) => api.post('/api/admin/import/readings', data).then(r => r.data),
-  importMultipleChoice: (data: any) => api.post('/api/admin/import/multiple-choice', data).then(r => r.data),
-  importWritingPrompts: (data: any) => api.post('/api/admin/import/writing-prompts', data).then(r => r.data),
-  importListening: (data: any) => api.post('/api/admin/import/listening', data).then(r => r.data),
-  getStats: () => api.get('/api/admin/stats').then(r => r.data),
+  importExercises: (data: any) => api.post('/api/admin/import/exercises', data).then((r: { data: any; }) => r.data),
+  importGrammarRules: (data: any) => api.post('/api/admin/import/grammar-rules', data).then((r: { data: any; }) => r.data),
+  importVocabulary: (data: any) => api.post('/api/admin/import/vocabulary', data).then((r: { data: any; }) => r.data),
+  importReadings: (data: any) => api.post('/api/admin/import/readings', data).then((r: { data: any; }) => r.data),
+  importMultipleChoice: (data: any) => api.post('/api/admin/import/multiple-choice', data).then((r: { data: any; }) => r.data),
+  importWritingPrompts: (data: any) => api.post('/api/admin/import/writing-prompts', data).then((r: { data: any; }) => r.data),
+  importListening: (data: any) => api.post('/api/admin/import/listening', data).then((r: { data: any; }) => r.data),
+  getStats: () => api.get('/api/admin/stats').then((r: { data: any; }) => r.data),
 };
 
 export const translateWord = async (text: string, targetLang = 'ru'): Promise<string> => {
